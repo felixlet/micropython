@@ -39,18 +39,6 @@ try:
 except NotImplementedError:
     print('NotImplementedError')
 
-# should raise type error
-try:
-    print(set('12') >= '1')
-except TypeError:
-    print('TypeError')
-
-# should raise type error
-try:
-    print(set('12') <= '123')
-except TypeError:
-    print('TypeError')
-
 # uPy raises TypeError, shold be ValueError
 try:
     '%c' % b'\x01\x02'
@@ -134,5 +122,30 @@ def f():
     pass
 try:
     f.x = 1
+except AttributeError:
+    print('AttributeError')
+
+# can't call a function type (ie make new instances of a function)
+try:
+    type(f)()
+except TypeError:
+    print('TypeError')
+
+# test when object explicitly listed at not-last position in parent tuple
+# this is not compliant with CPython because of illegal MRO
+class A:
+    def foo(self):
+        print('A.foo')
+class B(object, A):
+    pass
+B().foo()
+
+# can't assign property (or other special accessors) to already-subclassed class
+class A:
+    pass
+class B(A):
+    pass
+try:
+    A.bar = property()
 except AttributeError:
     print('AttributeError')

@@ -1,5 +1,5 @@
 /*
- * This file is part of the Micro Python project, http://micropython.org/
+ * This file is part of the MicroPython project, http://micropython.org/
  *
  * The MIT License (MIT)
  *
@@ -25,6 +25,8 @@
  */
 #ifndef MICROPY_INCLUDED_LIB_UTILS_PYEXEC_H
 #define MICROPY_INCLUDED_LIB_UTILS_PYEXEC_H
+
+#include "py/obj.h"
 
 typedef enum {
     PYEXEC_MODE_RAW_REPL,

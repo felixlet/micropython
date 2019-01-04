@@ -1,5 +1,5 @@
 /*
- * This file is part of the Micro Python project, http://micropython.org/
+ * This file is part of the MicroPython project, http://micropython.org/
  *
  * The MIT License (MIT)
  *
@@ -55,18 +55,22 @@
 #endif
 
 #if MPZ_DIG_SIZE > 16
+#define MPZ_DBL_DIG_SIZE (64)
 typedef uint32_t mpz_dig_t;
 typedef uint64_t mpz_dbl_dig_t;
 typedef int64_t mpz_dbl_dig_signed_t;
 #elif MPZ_DIG_SIZE > 8
+#define MPZ_DBL_DIG_SIZE (32)
 typedef uint16_t mpz_dig_t;
 typedef uint32_t mpz_dbl_dig_t;
 typedef int32_t mpz_dbl_dig_signed_t;
 #elif MPZ_DIG_SIZE > 4
+#define MPZ_DBL_DIG_SIZE (16)
 typedef uint8_t mpz_dig_t;
 typedef uint16_t mpz_dbl_dig_t;
 typedef int16_t mpz_dbl_dig_signed_t;
 #else
+#define MPZ_DBL_DIG_SIZE (8)
 typedef uint8_t mpz_dig_t;
 typedef uint8_t mpz_dbl_dig_t;
 typedef int8_t mpz_dbl_dig_signed_t;
@@ -111,7 +115,8 @@ void mpz_set_from_float(mpz_t *z, mp_float_t src);
 size_t mpz_set_from_str(mpz_t *z, const char *str, size_t len, bool neg, unsigned int base);
 void mpz_set_from_bytes(mpz_t *z, bool big_endian, size_t len, const byte *buf);
 
-bool mpz_is_zero(const mpz_t *z);
+static inline bool mpz_is_zero(const mpz_t *z) { return z->len == 0; }
+static inline bool mpz_is_neg(const mpz_t *z) { return z->len != 0 && z->neg != 0; }
 int mpz_cmp(const mpz_t *lhs, const mpz_t *rhs);
 
 void mpz_abs_inpl(mpz_t *dest, const mpz_t *z);

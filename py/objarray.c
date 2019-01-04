@@ -1,5 +1,5 @@
 /*
- * This file is part of the Micro Python project, http://micropython.org/
+ * This file is part of the MicroPython project, http://micropython.org/
  *
  * The MIT License (MIT)
  *
@@ -29,8 +29,6 @@
 #include <assert.h>
 #include <stdint.h>
 
-#include "py/nlr.h"
-#include "py/runtime0.h"
 #include "py/runtime.h"
 #include "py/binary.h"
 #include "py/objstr.h"
@@ -224,14 +222,14 @@ STATIC mp_obj_t memoryview_make_new(const mp_obj_type_t *type_in, size_t n_args,
 
     // test if the object can be written to
     if (mp_get_buffer(args[0], &bufinfo, MP_BUFFER_RW)) {
-        self->typecode |= 0x80; // used to indicate writable buffer
+        self->typecode |= MP_OBJ_ARRAY_TYPECODE_FLAG_RW; // indicate writable buffer
     }
 
     return MP_OBJ_FROM_PTR(self);
 }
 #endif
 
-STATIC mp_obj_t array_unary_op(mp_uint_t op, mp_obj_t o_in) {
+STATIC mp_obj_t array_unary_op(mp_unary_op_t op, mp_obj_t o_in) {
     mp_obj_array_t *o = MP_OBJ_TO_PTR(o_in);
     switch (op) {
         case MP_UNARY_OP_BOOL: return mp_obj_new_bool(o->len != 0);
@@ -240,7 +238,7 @@ STATIC mp_obj_t array_unary_op(mp_uint_t op, mp_obj_t o_in) {
     }
 }
 
-STATIC mp_obj_t array_binary_op(mp_uint_t op, mp_obj_t lhs_in, mp_obj_t rhs_in) {
+STATIC mp_obj_t array_binary_op(mp_binary_op_t op, mp_obj_t lhs_in, mp_obj_t rhs_in) {
     mp_obj_array_t *lhs = MP_OBJ_TO_PTR(lhs_in);
     switch (op) {
         case MP_BINARY_OP_ADD: {
@@ -271,8 +269,7 @@ STATIC mp_obj_t array_binary_op(mp_uint_t op, mp_obj_t lhs_in, mp_obj_t rhs_in) 
             return lhs_in;
         }
 
-        case MP_BINARY_OP_IN: {
-            /* NOTE `a in b` is `b.__contains__(a)` */
+        case MP_BINARY_OP_CONTAINS: {
             mp_buffer_info_t lhs_bufinfo;
             mp_buffer_info_t rhs_bufinfo;
 
@@ -288,7 +285,7 @@ STATIC mp_obj_t array_binary_op(mp_uint_t op, mp_obj_t lhs_in, mp_obj_t rhs_in) 
 
             // Otherwise, can only look for a scalar numeric value in an array
             if (MP_OBJ_IS_INT(rhs_in) || mp_obj_is_float(rhs_in)) {
-                mp_not_implemented("");
+                mp_raise_NotImplementedError(NULL);
             }
 
             return mp_const_false;
@@ -378,7 +375,7 @@ STATIC mp_obj_t array_subscr(mp_obj_t self_in, mp_obj_t index_in, mp_obj_t value
         } else if (MP_OBJ_IS_TYPE(index_in, &mp_type_slice)) {
             mp_bound_slice_t slice;
             if (!mp_seq_get_fast_slice_indexes(o->len, index_in, &slice)) {
-                mp_not_implemented("only slices with step=1 (aka None) are supported");
+                mp_raise_NotImplementedError("only slices with step=1 (aka None) are supported");
             }
             if (value != MP_OBJ_SENTINEL) {
                 #if MICROPY_PY_ARRAY_SLICE_ASSIGN
@@ -409,7 +406,7 @@ STATIC mp_obj_t array_subscr(mp_obj_t self_in, mp_obj_t index_in, mp_obj_t value
                     src_len = bufinfo.len;
                     src_items = bufinfo.buf;
                 } else {
-                    mp_not_implemented("array/bytes required on right side");
+                    mp_raise_NotImplementedError("array/bytes required on right side");
                 }
 
                 // TODO: check src/dst compat
@@ -417,7 +414,7 @@ STATIC mp_obj_t array_subscr(mp_obj_t self_in, mp_obj_t index_in, mp_obj_t value
                 uint8_t* dest_items = o->items;
                 #if MICROPY_PY_BUILTINS_MEMORYVIEW
                 if (o->base.type == &mp_type_memoryview) {
-                    if ((o->typecode & 0x80) == 0) {
+                    if (!(o->typecode & MP_OBJ_ARRAY_TYPECODE_FLAG_RW)) {
                         // store to read-only memoryview not allowed
                         return MP_OBJ_NULL;
                     }
@@ -474,7 +471,7 @@ STATIC mp_obj_t array_subscr(mp_obj_t self_in, mp_obj_t index_in, mp_obj_t value
             #if MICROPY_PY_BUILTINS_MEMORYVIEW
             if (o->base.type == &mp_type_memoryview) {
                 index += o->free;
-                if (value != MP_OBJ_SENTINEL && (o->typecode & 0x80) == 0) {
+                if (value != MP_OBJ_SENTINEL && !(o->typecode & MP_OBJ_ARRAY_TYPECODE_FLAG_RW)) {
                     // store to read-only memoryview
                     return MP_OBJ_NULL;
                 }
@@ -500,7 +497,7 @@ STATIC mp_int_t array_get_buffer(mp_obj_t o_in, mp_buffer_info_t *bufinfo, mp_ui
     bufinfo->typecode = o->typecode & TYPECODE_MASK;
     #if MICROPY_PY_BUILTINS_MEMORYVIEW
     if (o->base.type == &mp_type_memoryview) {
-        if ((o->typecode & 0x80) == 0 && (flags & MP_BUFFER_WRITE)) {
+        if (!(o->typecode & MP_OBJ_ARRAY_TYPECODE_FLAG_RW) && (flags & MP_BUFFER_WRITE)) {
             // read-only memoryview
             return 1;
         }

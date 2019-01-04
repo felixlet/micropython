@@ -185,7 +185,7 @@ a file it will save RAM if this is done in a piecemeal fashion. Rather than
 creating a large string object, create a substring and feed it to the stream
 before dealing with the next.
 
-The best way to create dynamic strings is by means of the string `format`
+The best way to create dynamic strings is by means of the string ``format()``
 method:
 
 .. code::
@@ -259,7 +259,7 @@ were a string.
 **Runtime compiler execution**
 
 The Python funcitons `eval` and `exec` invoke the compiler at runtime, which
-requires significant amounts of RAM. Note that the `pickle` library from
+requires significant amounts of RAM. Note that the ``pickle`` library from
 `micropython-lib` employs `exec`. It may be more RAM efficient to use the
 `ujson` library for object serialisation.
 
@@ -279,7 +279,7 @@ After importing the modules, execute:
 
 Then copy and paste all the Q(xxx) lines into a text editor. Check for and
 remove lines which are obviously invalid. Open the file qstrdefsport.h which
-will be found in stmhal (or the equivalent directory for the architecture in
+will be found in ports/stm32 (or the equivalent directory for the architecture in
 use). Copy and paste the corrected lines at the end of the file. Save the file,
 rebuild and flash the firmware. The outcome can be checked by importing the
 modules and again issuing:
